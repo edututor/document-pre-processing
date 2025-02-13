@@ -1,0 +1,6 @@
+.env
+tester_dummy.py
+documents/extracted_tables.json
+documents/extracted_text.json
+documents/embeddings_tables.json
+documents/embeddings_text.json
