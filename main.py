@@ -1,5 +1,4 @@
 import boto3
-import json
 import os
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
@@ -7,8 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pdf_manager import PdfManager
 from openai_client import OpenAiClient
 from vector_manager import VectorManager
-from agents import tables_extraction_agent, text_extraction_agent
-from schemas import TablesSchema, ExtractedTextSchema, PreprocessRequest
+from schemas import PreprocessRequest
 from chunkify_data import chunkify
 from config import settings
 from loguru import logger
