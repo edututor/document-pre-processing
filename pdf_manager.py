@@ -5,8 +5,11 @@ import pdfplumber
 
 class PdfManager:
     def extract(self, client, corpus, schema, agent):
-
         # Extract data from pdf
+        """ We're not using this method for now. 
+            Extracts pure text from pdf and docx.
+            Seperates text html tags from the raw text.    
+        """
         logger.info("Extracting data")
         try:
             logger.info("Prompting ChatGPT")
