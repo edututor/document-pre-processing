@@ -1,6 +1,4 @@
 from loguru import logger
-from schemas import TablesSchema
-from typing import List
 from docx import Document
 from io import BytesIO
 import pdfplumber
@@ -20,25 +18,6 @@ class PdfManager:
                 
         except Exception as e:
             logger.error(f"An error occured while querying ChatGPT: {e}")
-
-    # Format tables into 
-    def format_table_for_embedding(self, raw_tables: TablesSchema) -> List[str]:
-        # Convert table schema to text
-        formatted_tables = []
-
-        for table in raw_tables.tables:
-            formatted_table = f"Table: {table.table_name}\n"
-
-            # Add column names
-            formatted_table += f"Columns: {', '.join(table.columns)}\n"
-
-            # Add rows in table format
-            for row in table.rows:
-                formatted_table += f"Row: {', '.join(row)}\n"
-            
-            formatted_tables.append(formatted_table)
-        
-        return formatted_tables
     
     # Extract text using pdfplumber
     def pdf_reader(self, file_content, file_type):
