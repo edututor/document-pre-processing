@@ -32,7 +32,6 @@ s3_client = boto3.client(
 # Access the Pinecone indexes
 pc = Pinecone(api_key=settings.pinecone_api_key)
 text_index = pc.Index("document-text-embeddings")
-table_index = pc.Index("table-embeddings")
 
 @app.post("/api/preprocess")
 async def preprocess_file(request: PreprocessRequest):
@@ -60,9 +59,7 @@ async def preprocess_file(request: PreprocessRequest):
         bucket_name, object_key = s3_parts
         logger.success(f"bucket_name: {bucket_name}, object_key: {object_key}")
         # Fetch the file content from S3
-        logger.info("Getting the object")
         response = s3_client.get_object(Bucket=bucket_name, Key=object_key)
-        logger.success("Object received!")
         # Validate the content type
         content_type = response.get("ContentType", "")
         logger.info(f"Content Type: {content_type}")
