@@ -10,10 +10,9 @@ class VectorManager:
         
 
     def vectorize(self, client, corpus):
-
-        logger.info("Querying to get embeddings")
-
         # Generate embeddings
+        
+        logger.info("Querying to get embeddings")
         try:
             embeddings_response = client.generate_embeddings(corpus)
 
