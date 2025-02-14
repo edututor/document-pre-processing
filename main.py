@@ -87,20 +87,14 @@ async def preprocess_file(request: PreprocessRequest):
         if not file_type:
             raise ValueError(f"Unsupported file type: {content_type}")
      
-        # Extract tables and text
+        # Extract text
         extracted_file = pdf_manager.pdf_reader(file_content, file_type)
-        extracted_tables = pdf_manager.extract(client, extracted_file, TablesSchema, tables_extraction_agent)
-        extracted_text = pdf_manager.extract(client, extracted_file, ExtractedTextSchema, text_extraction_agent)
 
         # Chunkify the text
-        chunkified_text = chunkify(extracted_text.text)
-
-        # Format tables for embedding generation
-        formatted_tables = pdf_manager.format_table_for_embedding(extracted_tables)
+        chunkified_text = chunkify(extracted_file.text)
 
         # Create embeddings
         text_embeddings = vector_manager.vectorize(client, chunkified_text)
-        table_embeddings = vector_manager.vectorize(client, formatted_tables)
 
         # Get today's date
         today_date = datetime.now().strftime("%Y/%m/%d")
@@ -124,29 +118,6 @@ async def preprocess_file(request: PreprocessRequest):
             logger.success(f"{len(text_vectors)} text embeddings written to the text index.")
         except Exception as e:
             logger.error(f"Failed to upsert text embeddings: {str(e)}")
-
-        # Write table embeddings to the tables index
-        table_vectors = [
-            {
-                "id": f"table-{i}-{object_key}",
-                "values": embedding,
-                "metadata": {
-                    "document_name": object_key,
-                    "company_name": company_name,
-                    "table_columns": table.columns,
-                    "table_rows": json.dumps(table.rows),
-                    "table_name": table.table_name,
-                    "upload_date": today_date,
-                }
-            }
-            for i, (table, embedding) in enumerate(zip(extracted_tables.tables, table_embeddings))
-        ]
-        try:
-            table_index.upsert(vectors=table_vectors)
-            logger.success(f"{len(table_vectors)} table embeddings written to the tables index.")
-            logger.success("Preprocessing and indexing completed successfully.")
-        except Exception as e:
-            logger.error(f"Failed to upsert table embeddings: {str(e)}")
 
         # Return success response with preprocessing result
         return JSONResponse(
