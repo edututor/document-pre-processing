@@ -1,7 +1,6 @@
 import tiktoken
 from loguru import logger
 
-
 # Chunkify the document
 def chunkify(text, max_tokens=500, overlap=20):
     logger.info("Chunkifier called")

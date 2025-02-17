@@ -1,11 +1,11 @@
 from loguru import logger
-from docx import Document
+# from docx import Document
 from io import BytesIO
 import pdfplumber
 
-class PdfManager:
+class PdfManager:   
+    # Extract data from pdf using ChatGPT
     def extract(self, client, corpus, schema, agent):
-        # Extract data from pdf
         """ We're not using this method for now. 
             Extracts pure text from pdf and docx.
             Seperates text html tags from the raw text.    
@@ -36,15 +36,20 @@ class PdfManager:
         """
         if file_type == "pdf":
             with pdfplumber.open(BytesIO(file_content)) as pdf:
-                text = ""
+                extracted_pages = []
                 for page in pdf.pages:
-                    text += page.extract_text() + "\n"
-            return text
-        elif file_type == "docx":
+                    if page.extract_text() != "" and page.extract_text() != None:
+                        extracted_pages.append(page.extract_text())
+            return extracted_pages
+        
+        else:
+            raise ValueError("Unsupported file type. Supported types: 'pdf'")
+        
+        # We can't extract docx page by page. Close it for now
+        """ elif file_type == "docx":
             document = Document(BytesIO(file_content))
             text = ""
             for paragraph in document.paragraphs:
                 text += paragraph.text + "\n"
-            return text
-        else:
-            raise ValueError("Unsupported file type. Supported types: 'pdf', 'docx'")
+            return text """
+        
