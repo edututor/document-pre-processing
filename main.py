@@ -31,13 +31,13 @@ s3_client = boto3.client(
 
 # Access the Pinecone indexes
 pc = Pinecone(api_key=settings.pinecone_api_key)
-text_index = pc.Index("document-text-embeddings")
+text_index = pc.Index("document-text-index")
 
 @app.post("/api/preprocess")
 async def preprocess_file(request: PreprocessRequest):
-    logger.info(f"Request received: {request.file_url}, {request.company_name}")
+    logger.info(f"Request received: {request.file_url}, {request.document_name}")
     file_url = request.file_url
-    company_name = request.company_name
+    document_name = request.document_name
     client = OpenAiClient()
     pdf_manager = PdfManager()
     vector_manager = VectorManager()
@@ -62,7 +62,6 @@ async def preprocess_file(request: PreprocessRequest):
         response = s3_client.get_object(Bucket=bucket_name, Key=object_key)
         # Validate the content type
         content_type = response.get("ContentType", "")
-        logger.info(f"Content Type: {content_type}")
         if content_type != "application/pdf":
             raise ValueError(f"Unsupported content type: {content_type}")
 
@@ -74,7 +73,8 @@ async def preprocess_file(request: PreprocessRequest):
         # Map MIME type to file type
         mime_to_type = {
             "application/pdf": "pdf",
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
+            # Remove .docx from allowed mime types for now
+            # "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
         }
 
         file_type = mime_to_type.get(content_type)
@@ -86,10 +86,10 @@ async def preprocess_file(request: PreprocessRequest):
         extracted_file = pdf_manager.pdf_reader(file_content, file_type)
 
         # Chunkify the text
-        chunkified_text = chunkify(extracted_file.text)
+        # chunkified_text = chunkify(extracted_file.text)
 
         # Create embeddings
-        text_embeddings = vector_manager.vectorize(client, chunkified_text)
+        document_text_embeddings = vector_manager.vectorize(client, extracted_file)
 
         # Get today's date
         today_date = datetime.now().strftime("%Y/%m/%d")
@@ -97,16 +97,17 @@ async def preprocess_file(request: PreprocessRequest):
         # Write text embeddings to the text index
         text_vectors = [
             {
-                "id": f"text-{i}-{object_key}",
+                "id": f"page-{i}-{object_key}",
                 "values": embedding,
                 "metadata": {
                     "document_name": object_key,
-                    "company_name": company_name,
+                    "document_name": document_name,
                     "chunk": chunk,
                     "upload_date": today_date,
+                    "page": i
                 }
             }
-            for i, (chunk, embedding) in enumerate(zip(chunkified_text, text_embeddings))
+            for i, (chunk, embedding) in enumerate(zip(extracted_file, document_text_embeddings))
         ]
         try:
             text_index.upsert(vectors=text_vectors)
