@@ -33,6 +33,22 @@ s3_client = boto3.client(
 pc = Pinecone(api_key=settings.pinecone_api_key)
 text_index = pc.Index("document-text-index")
 
+
+# Upsert the vectors as batches to ensure
+# we don't exceed Pinecone's message length limit
+def batch_upsert(index, vectors, batch_size=100):
+    total_vectors = len(vectors)
+    logger.info(f"Starting batch upserts: {total_vectors} vectors, batch size: {batch_size}")
+
+    for i in range(0, total_vectors, batch_size):
+        batch = vectors[i:i + batch_size]
+        try:
+            index.upsert(vectors=batch)
+            logger.success(f"Batch {i // batch_size + 1}: Upserted {len(batch)} vectors")
+        except Exception as e:
+            logger.error(f"Batch {i // batch_size + 1}: Failed to upsert vectors: {str(e)}")
+
+
 @app.post("/api/preprocess")
 async def preprocess_file(request: PreprocessRequest):
     logger.info(f"Request received: {request.file_url}, {request.document_name}")
@@ -111,10 +127,14 @@ async def preprocess_file(request: PreprocessRequest):
             for i, (chunk, embedding) in enumerate(zip(extracted_file, document_text_embeddings))
         ]
         try:
-            text_index.upsert(vectors=text_vectors)
+            batch_upsert(text_index, text_vectors, batch_size=100)  # Adjust batch_size if necessary
             logger.success(f"{len(text_vectors)} text embeddings written to the text index.")
         except Exception as e:
             logger.error(f"Failed to upsert text embeddings: {str(e)}")
+            return JSONResponse(
+                status_code=500,
+                content={"message": "Failed to upsert text embeddings"}
+            )
 
         # Return success response with preprocessing result
         return JSONResponse(
