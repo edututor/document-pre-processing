@@ -37,6 +37,7 @@ class PdfManager:
         if file_type == "pdf":
             with pdfplumber.open(BytesIO(file_content)) as pdf:
                 extracted_pages = []
+                logger.info(f"Extracting pages. Number of pages: {len(pdf.pages)}")
                 for page in pdf.pages:
                     if page.extract_text() != "" and page.extract_text() != None:
                         extracted_pages.append(page.extract_text())
