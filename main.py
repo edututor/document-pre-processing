@@ -84,6 +84,7 @@ async def preprocess_file(request: PreprocessRequest):
      
         # Extract text
         extracted_file = pdf_manager.pdf_reader(file_content, file_type)
+        logger.info(f"Number of extracted pages: {len(extracted_file)}")
 
         # Chunkify the text
         # chunkified_text = chunkify(extracted_file.text)
